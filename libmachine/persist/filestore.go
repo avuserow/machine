@@ -13,7 +13,9 @@ import (
 	"github.com/docker/libkv"
 	"github.com/docker/libkv/store"
 	"github.com/docker/libkv/store/etcd"
+	"github.com/docker/machine/libmachine/auth"
 	"github.com/docker/machine/libmachine/host"
+	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/mcnerror"
 )
 
@@ -22,6 +24,12 @@ type Filestore struct {
 	CaCertPath       string
 	CaPrivateKeyPath string
 	store            store.Store
+}
+
+type Certs struct {
+	CaCert     []byte
+	ServerCert []byte
+	ServerKey  []byte
 }
 
 func init() {
@@ -192,4 +200,36 @@ func (s Filestore) Load(name string) (*host.Host, error) {
 	}
 
 	return host, nil
+}
+
+func (s Filestore) LoadCerts(authOptions *auth.Options) (*Certs, error) {
+	caCertPath := authOptions.CaCertPath
+	serverCertPath := authOptions.ServerCertPath
+	serverKeyPath := authOptions.ServerKeyPath
+
+	log.Debugf("Reading CA certificate from %s", caCertPath)
+	caCert, err := ioutil.ReadFile(caCertPath)
+	if err != nil {
+		return nil, err
+	}
+
+	log.Debugf("Reading server certificate from %s", serverCertPath)
+	serverCert, err := ioutil.ReadFile(serverCertPath)
+	if err != nil {
+		return nil, err
+	}
+
+	log.Debugf("Reading server key from %s", serverKeyPath)
+	serverKey, err := ioutil.ReadFile(serverKeyPath)
+	if err != nil {
+		return nil, err
+	}
+
+	certs := &Certs{
+		CaCert:     caCert,
+		ServerCert: serverCert,
+		ServerKey:  serverKey,
+	}
+
+	return certs, nil
 }
