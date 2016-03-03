@@ -23,28 +23,36 @@ func init() {
 }
 
 type Kvstore struct {
-	store store.Store
+	store  store.Store
+	prefix string
 }
 
 func NewKvstore(path string, certsDir string) *Kvstore {
 	fmt.Printf(`XXX NewKvstore("%s", "%s")`, path, certsDir)
-	kvurl, err := url.Parse(path)
 	var kvStore store.Store
+	kvurl, err := url.Parse(path)
 	if err != nil {
-		switch kvurl.Scheme {
-		case "etcd":
-			kvStore, err = libkv.NewStore(
-				store.ETCD,
-				[]string{kvurl.Host},
-				&store.Config{
-					ConnectionTimeout: 10 * time.Second,
-				},
-			)
-			// TODO other KV store types
-		}
+		panic(fmt.Sprintf("Malformed store path: %s %s", path, err))
+	}
+	switch kvurl.Scheme {
+	case "etcd":
+		// TODO - figure out how to get TLS support in here...
+		kvStore, err = libkv.NewStore(
+			store.ETCD,
+			[]string{kvurl.Host},
+			&store.Config{
+				ConnectionTimeout: 10 * time.Second,
+			},
+		)
+		// TODO other KV store types
+	default:
+		panic(fmt.Sprintf("Unsupporetd KV store type: %s", kvurl.Scheme))
 	}
 
-	return &Kvstore{store: kvStore}
+	return &Kvstore{
+		store:  kvStore,
+		prefix: kvurl.Path,
+	}
 }
 
 func (s Kvstore) Save(host *host.Host) error {
@@ -53,18 +61,18 @@ func (s Kvstore) Save(host *host.Host) error {
 		return err
 	}
 
-	hostPath := filepath.Join(MachinePrefix, "machines", host.Name)
+	hostPath := filepath.Join(s.prefix, MachinePrefix, "machines", host.Name)
 	err = s.store.Put(hostPath, data, nil)
 	return err
 }
 
 func (s Kvstore) Exists(name string) (bool, error) {
-	hostPath := filepath.Join(MachinePrefix, "machines", name)
+	hostPath := filepath.Join(s.prefix, MachinePrefix, "machines", name)
 	return s.store.Exists(hostPath)
 }
 
 func (s Kvstore) Load(name string) (*host.Host, error) {
-	hostPath := filepath.Join(MachinePrefix, "machines", name)
+	hostPath := filepath.Join(s.prefix, MachinePrefix, "machines", name)
 
 	kvPair, err := s.store.Get(hostPath)
 	if err != nil {
@@ -81,9 +89,12 @@ func (s Kvstore) Load(name string) (*host.Host, error) {
 }
 
 func (s Kvstore) List() ([]string, error) {
-	machineDir := filepath.Join(MachinePrefix, "machines")
+	machineDir := filepath.Join(s.prefix, MachinePrefix, "machines")
 	kvList, err := s.store.List(machineDir)
-	if err != nil {
+	if err == store.ErrKeyNotFound {
+		// No machines set up
+		return []string{}, nil
+	} else if err != nil {
 		return nil, err
 	}
 
@@ -102,5 +113,5 @@ func (s Kvstore) Remove(name string) error {
 }
 
 func (s Kvstore) GetMachinesDir() string {
-	return filepath.Join(MachinePrefix, "machines")
+	return filepath.Join(s.prefix, MachinePrefix, "machines")
 }
