@@ -11,6 +11,7 @@ import (
 	"github.com/docker/libkv/store"
 	"github.com/docker/libkv/store/etcd"
 	"github.com/docker/machine/libmachine/host"
+	"github.com/docker/machine/libmachine/log"
 )
 
 const MachinePrefix = "machine/v0"
@@ -71,6 +72,37 @@ func (s Kvstore) Exists(name string) (bool, error) {
 	return s.store.Exists(hostPath)
 }
 
+func (s Kvstore) loadConfig(h *host.Host, data []byte) error {
+	// Remember the machine name so we don't have to pass it through each
+	// struct in the migration.
+	name := h.Name
+
+	migratedHost, migrationPerformed, err := host.MigrateHost(h, data)
+	if err != nil {
+		return fmt.Errorf("Error getting migrated host: %s", err)
+	}
+
+	*h = *migratedHost
+
+	h.Name = name
+
+	// If we end up performing a migration, we should save afterwards so we don't have to do it again on subsequent invocations.
+	log.Infof("AK: migration performed: %s", migrationPerformed)
+	if migrationPerformed {
+		// XXX TODO do we want to save?
+
+		//		if err := s.saveToFile(data, filepath.Join(s.GetMachinesDir(), h.Name, "config.json.bak")); err != nil {
+		//			return fmt.Errorf("Error attempting to save backup after migration: %s", err)
+		//		}
+		//
+		//		if err := s.Save(h); err != nil {
+		//			return fmt.Errorf("Error saving config after migration was performed: %s", err)
+		//		}
+	}
+
+	return nil
+}
+
 func (s Kvstore) Load(name string) (*host.Host, error) {
 	hostPath := filepath.Join(s.prefix, MachinePrefix, "machines", name)
 
@@ -85,9 +117,12 @@ func (s Kvstore) Load(name string) (*host.Host, error) {
 		Name: name,
 	}
 
+	if err := s.loadConfig(host, kvPair.Value); err != nil {
+		return nil, err
+	}
+
 	return host, nil
 }
-
 func (s Kvstore) List() ([]string, error) {
 	machineDir := filepath.Join(s.prefix, MachinePrefix, "machines")
 	kvList, err := s.store.List(machineDir)
