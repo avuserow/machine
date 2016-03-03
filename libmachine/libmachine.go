@@ -44,6 +44,8 @@ type Client struct {
 }
 
 func NewClient(storePath, certsDir string) *Client {
+	fmt.Printf(`XXX NewClient("%s", "%s")
+`, storePath, certsDir)
 	return &Client{
 		certsDir:            certsDir,
 		IsDebug:             false,

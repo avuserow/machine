@@ -32,6 +32,8 @@ func init() {
 }
 
 func NewFilestore(path, caCertPath, caPrivateKeyPath string) *Filestore {
+	fmt.Printf(`XXX NewFilestore("%s", "%s", "%s")
+`, path, caCertPath, caPrivateKeyPath)
 	kvurl, err := url.Parse(path)
 	var kvStore store.Store
 	if err != nil {

@@ -40,6 +40,8 @@ func GetUsername() string {
 }
 
 func CopyFile(src, dst string) error {
+	fmt.Printf(`XXX In CopyFile("%s", "%s")
+`, src, dst)
 	in, err := os.Open(src)
 	if err != nil {
 		return err

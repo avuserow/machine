@@ -139,7 +139,11 @@ func runAction(actionName string, c CommandLine, api libmachine.API) error {
 }
 
 func runCommand(command func(commandLine CommandLine, api libmachine.API) error) func(context *cli.Context) {
+	fmt.Printf(`XXX runCommand(%#v)
+`, command)
 	return func(context *cli.Context) {
+		fmt.Printf(`XXX runCommand->func(%#v)
+`, context)
 		api := libmachine.NewClient(mcndirs.GetBaseDir(), mcndirs.GetMachineCertDir())
 		defer api.Close()
 
