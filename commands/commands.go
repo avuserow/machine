@@ -139,14 +139,17 @@ func runAction(actionName string, c CommandLine, api libmachine.API) error {
 }
 
 func runCommand(command func(commandLine CommandLine, api libmachine.API) error) func(context *cli.Context) {
-	fmt.Printf(`XXX runCommand(%#v)
-`, command)
+	//fmt.Printf(`XXX runCommand(%#v)
+	//`, command)
 	return func(context *cli.Context) {
 		fmt.Printf(`XXX runCommand->func(%#v)
 `, context)
 		storagePath := context.GlobalString("storage-path")
-		if storagePath == "" {
+		if storagePath != "" {
+			fmt.Printf("XXX detected storage-path\n")
 			mcndirs.BaseDir = storagePath
+		} else {
+			fmt.Printf("XXX did NOT detect storage-path\n")
 		}
 		api := libmachine.NewClient(mcndirs.GetBaseDir(), mcndirs.GetMachineCertDir())
 		defer api.Close()

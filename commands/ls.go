@@ -75,6 +75,7 @@ type FilterOptions struct {
 }
 
 func cmdLs(c CommandLine, api libmachine.API) error {
+	fmt.Println("XXX cmdLs")
 	filters, err := parseFilters(c.StringSlice("filter"))
 	if err != nil {
 		return err
