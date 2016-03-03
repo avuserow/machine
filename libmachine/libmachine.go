@@ -2,6 +2,7 @@ package libmachine
 
 import (
 	"fmt"
+	"net/url"
 	"path/filepath"
 
 	"io"
@@ -31,7 +32,6 @@ type API interface {
 	NewHost(driverName string, rawDriver []byte) (*host.Host, error)
 	Create(h *host.Host) error
 	persist.Store
-	GetMachinesDir() string
 }
 
 type Client struct {
@@ -39,18 +39,31 @@ type Client struct {
 	IsDebug        bool
 	SSHClientType  ssh.ClientType
 	GithubAPIToken string
-	*persist.Filestore
+	//*persist.Filestore
+	persist.Store
 	clientDriverFactory rpcdriver.RPCClientDriverFactory
 }
 
 func NewClient(storePath, certsDir string) *Client {
-	fmt.Printf(`XXX NewClient("%s", "%s")
-`, storePath, certsDir)
+	// Determine which type of store to generate
+	storeURL, err := url.Parse(storePath)
+	var store persist.Store
+	if err == nil {
+		// The scheme will be blank on unix paths, might be a drive letter (single char)
+		// or a multi-character scheme that libkv will hopefully handle
+		if len(storeURL.Scheme) > 1 {
+			store = persist.NewKvstore(storePath, certsDir)
+		}
+	}
+	if store == nil {
+		store = persist.NewFilestore(storePath, certsDir, certsDir)
+	}
+
 	return &Client{
 		certsDir:            certsDir,
 		IsDebug:             false,
 		SSHClientType:       ssh.External,
-		Filestore:           persist.NewFilestore(storePath, certsDir, certsDir),
+		Store:               store,
 		clientDriverFactory: rpcdriver.NewRPCClientDriverFactory(),
 	}
 }
@@ -91,7 +104,7 @@ func (api *Client) NewHost(driverName string, rawDriver []byte) (*host.Host, err
 }
 
 func (api *Client) Load(name string) (*host.Host, error) {
-	h, err := api.Filestore.Load(name)
+	h, err := api.Store.Load(name)
 	if err != nil {
 		return nil, err
 	}
@@ -187,4 +200,8 @@ func (api *Client) performCreate(h *host.Host) error {
 
 func (api *Client) Close() error {
 	return api.clientDriverFactory.Close()
+}
+
+func (api *Client) GetMachinesDir() string {
+	return api.Store.GetMachinesDir()
 }

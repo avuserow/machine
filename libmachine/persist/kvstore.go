@@ -58,3 +58,16 @@ func (s Kvstore) Load(name string) (*host.Host, error) {
 	fmt.Println("XXX: load NYI", name)
 	return nil, nil
 }
+
+func (s Kvstore) GetMachinesDir() string {
+	fmt.Println("XXX: GetMachinesDir")
+	return ""
+}
+func (s Kvstore) List() ([]string, error) {
+	fmt.Println("XXX: List")
+	return nil, nil
+}
+func (s Kvstore) Remove(name string) error {
+	fmt.Println("XXX: Remove")
+	return nil
+}
