@@ -143,8 +143,10 @@ func (s Kvstore) List() ([]string, error) {
 }
 
 func (s Kvstore) Remove(name string) error {
-	fmt.Println("XXX: Remove")
-	return nil
+	hostPath := filepath.Join(s.prefix, MachinePrefix, "machines", name)
+
+	err := s.store.Delete(hostPath)
+	return err
 }
 
 func (s Kvstore) GetMachinesDir() string {
