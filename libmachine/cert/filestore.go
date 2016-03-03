@@ -5,18 +5,32 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+
+	"github.com/docker/machine/libmachine/auth"
 )
 
 type CertFilestore struct {
-	Path string
+	Path        string
+	authOptions *auth.Options
 }
 
-func NewCertFilestore(path string) (*CertFilestore, error) {
-	fmt.Printf(`XXX NewCertFilestore("%s")
-`, path)
+func NewCertFilestore(authOptions *auth.Options) (*CertFilestore, error) {
+	fmt.Printf(`XXX NewCertFilestore(%#v)
+`, authOptions)
+
+	if _, err := os.Stat(authOptions.CertDir); err != nil {
+		if os.IsNotExist(err) {
+			if err := os.MkdirAll(authOptions.CertDir, 0700); err != nil {
+				return nil, fmt.Errorf("Creating machine certificate dir failed: %s", err)
+			}
+		} else {
+			return nil, err
+		}
+	}
 
 	return &CertFilestore{
-		Path: path,
+		Path:        authOptions.CertDir, // XXX WRONG!!!
+		authOptions: authOptions,
 	}, nil
 }
 

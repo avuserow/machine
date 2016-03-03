@@ -9,6 +9,7 @@ import (
 	"github.com/docker/libkv"
 	"github.com/docker/libkv/store"
 	"github.com/docker/libkv/store/etcd"
+	"github.com/docker/machine/libmachine/auth"
 )
 
 const MachinePrefix = "machine/v0"
@@ -21,16 +22,17 @@ func init() {
 }
 
 type CertKvstore struct {
-	store  store.Store
-	prefix string
+	authOptions *auth.Options
+	store       store.Store
+	prefix      string
 }
 
-func NewCertKvstore(path string) (*CertKvstore, error) {
-	fmt.Printf(`XXX NewCertKvstore("%s")`, path)
+func NewCertKvstore(authOptions *auth.Options) (*CertKvstore, error) {
+	fmt.Printf(`XXX NewCertKvstore("%s")`, authOptions.CertDir)
 	var kvStore store.Store
-	kvurl, err := url.Parse(path)
+	kvurl, err := url.Parse(authOptions.CertDir)
 	if err != nil {
-		return nil, fmt.Errorf("Malformed store path: %s %s", path, err)
+		return nil, fmt.Errorf("Malformed store path: %s %s", authOptions.CertDir, err)
 	}
 	switch kvurl.Scheme {
 	case "etcd":
@@ -48,8 +50,9 @@ func NewCertKvstore(path string) (*CertKvstore, error) {
 	}
 
 	return &CertKvstore{
-		store:  kvStore,
-		prefix: kvurl.Path,
+		store:       kvStore,
+		prefix:      kvurl.Path,
+		authOptions: authOptions,
 	}, nil
 }
 

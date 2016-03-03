@@ -10,7 +10,19 @@ import (
 	"github.com/docker/machine/libmachine/mcnutils"
 )
 
+var (
+	Store CertStore
+)
+
 func BootstrapCertificates(authOptions *auth.Options) error {
+
+	// Check the cert path, and wire up the right store for access operations
+	store, err := NewCertStore(authOptions)
+	if err != nil {
+		return err
+	}
+	Store = store
+
 	certDir := authOptions.CertDir
 	caCertPath := authOptions.CaCertPath
 	caPrivateKeyPath := authOptions.CaPrivateKeyPath
@@ -24,16 +36,6 @@ func BootstrapCertificates(authOptions *auth.Options) error {
 	org := caOrg + ".<bootstrap>"
 
 	bits := 2048
-
-	if _, err := os.Stat(certDir); err != nil {
-		if os.IsNotExist(err) {
-			if err := os.MkdirAll(certDir, 0700); err != nil {
-				return fmt.Errorf("Creating machine certificate dir failed: %s", err)
-			}
-		} else {
-			return err
-		}
-	}
 
 	if _, err := os.Stat(caCertPath); os.IsNotExist(err) {
 		log.Infof("Creating CA: %s", caCertPath)

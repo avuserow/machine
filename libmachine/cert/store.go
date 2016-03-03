@@ -2,6 +2,8 @@ package cert
 
 import (
 	"net/url"
+
+	"github.com/docker/machine/libmachine/auth"
 )
 
 type CertStore interface {
@@ -14,15 +16,15 @@ type CertStore interface {
 	Read(filename string) ([]byte, error)
 }
 
-func NewCertStore(storePath string) (CertStore, error) {
+func NewCertStore(authOptions *auth.Options) (CertStore, error) {
 	// Determine which type of store to generate
-	storeURL, err := url.Parse(storePath)
+	storeURL, err := url.Parse(authOptions.CertDir)
 	if err == nil {
 		// The scheme will be blank on unix paths, might be a drive letter (single char)
 		// or a multi-character scheme that libkv will hopefully handle
 		if len(storeURL.Scheme) > 1 {
-			return NewCertKvstore(storePath)
+			return NewCertKvstore(authOptions)
 		}
 	}
-	return NewCertFilestore(storePath)
+	return NewCertFilestore(authOptions)
 }
