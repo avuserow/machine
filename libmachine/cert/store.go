@@ -2,6 +2,7 @@ package cert
 
 import (
 	"net/url"
+	"os"
 
 	"github.com/docker/machine/libmachine/auth"
 )
@@ -10,10 +11,12 @@ type CertStore interface {
 	// TODO - flesh this out once we know what we need
 
 	// This is probably too low level
-	Write(filename string, data []byte) error
+	Write(filename string, data []byte, flag int, perm os.FileMode) error
 
 	// This is probably too low level
 	Read(filename string) ([]byte, error)
+
+	Exists(filename string) bool
 }
 
 func NewCertStore(authOptions *auth.Options) (CertStore, error) {

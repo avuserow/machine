@@ -3,7 +3,9 @@ package cert
 import (
 	"fmt"
 	"net/url"
+	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/docker/libkv"
@@ -28,7 +30,8 @@ type CertKvstore struct {
 }
 
 func NewCertKvstore(authOptions *auth.Options) (*CertKvstore, error) {
-	fmt.Printf(`XXX NewCertKvstore("%s")`, authOptions.CertDir)
+	fmt.Printf(`XXX NewCertKvstore("%s")
+`, authOptions.CertDir)
 	var kvStore store.Store
 	kvurl, err := url.Parse(authOptions.CertDir)
 	if err != nil {
@@ -49,6 +52,22 @@ func NewCertKvstore(authOptions *auth.Options) (*CertKvstore, error) {
 		return nil, fmt.Errorf("Unsupporetd KV store type: %s", kvurl.Scheme)
 	}
 
+	// XXX This feels super messy - there's got to be a better way.
+	prefix := fmt.Sprintf("%s:/%s", kvurl.Scheme, kvurl.Host)
+	authOptions.CertDir = strings.TrimPrefix(authOptions.CertDir, prefix)
+	authOptions.CaCertPath = strings.TrimPrefix(authOptions.CaCertPath, prefix)
+	authOptions.CaPrivateKeyPath = strings.TrimPrefix(authOptions.CaPrivateKeyPath, prefix)
+	authOptions.CaCertRemotePath = strings.TrimPrefix(authOptions.CaCertRemotePath, prefix)
+	authOptions.ServerCertPath = strings.TrimPrefix(authOptions.ServerCertPath, prefix)
+	authOptions.ServerKeyPath = strings.TrimPrefix(authOptions.ServerKeyPath, prefix)
+	authOptions.ClientKeyPath = strings.TrimPrefix(authOptions.ClientKeyPath, prefix)
+	authOptions.ServerCertRemotePath = strings.TrimPrefix(authOptions.ServerCertRemotePath, prefix)
+	authOptions.ServerKeyRemotePath = strings.TrimPrefix(authOptions.ServerKeyRemotePath, prefix)
+	authOptions.ClientCertPath = strings.TrimPrefix(authOptions.ClientCertPath, prefix)
+	authOptions.StorePath = strings.TrimPrefix(authOptions.StorePath, prefix)
+	fmt.Printf("XXX CertDir: %s\n", authOptions.CertDir)
+	fmt.Printf("XXX CaCertPath: %s\n", authOptions.CaCertPath)
+
 	return &CertKvstore{
 		store:       kvStore,
 		prefix:      kvurl.Path,
@@ -56,22 +75,35 @@ func NewCertKvstore(authOptions *auth.Options) (*CertKvstore, error) {
 	}, nil
 }
 
-func (s CertKvstore) Write(filename string, data []byte) error {
-	fmt.Printf(`XXX Write("%s", <data>)
-`, filename)
+func (s CertKvstore) Write(filename string, data []byte, flag int, perm os.FileMode) error {
 
-	key := filepath.Join(s.prefix, MachinePrefix, filename)
+	key := filepath.Join("/", MachinePrefix, s.prefix, filename)
+	fmt.Printf("XXX KV Write -> %s\n", key)
 	err := s.store.Put(key, data, nil)
+	fmt.Printf("XXX err: %s\n", err)
 	return err
 }
 
 func (s CertKvstore) Read(filename string) ([]byte, error) {
-	fmt.Printf(`XXX Read("%s")
-`, filename)
-	key := filepath.Join(s.prefix, MachinePrefix, filename)
+	key := filepath.Join("/", MachinePrefix, s.prefix, filename)
+	fmt.Printf("XXX KV Read -> %s\n", key)
 	kvpair, err := s.store.Get(key)
 	if err != nil {
 		return nil, err
 	}
+	fmt.Printf("XXX err: %s\n", err)
 	return kvpair.Value, nil
+}
+func (s CertKvstore) Exists(filename string) bool {
+	key := filepath.Join("/", MachinePrefix, s.prefix, filename)
+	fmt.Printf("XXX KV Exists -> %s\n", key)
+	exists, err := s.store.Exists(key)
+	if err != nil {
+		// TODO log a better message on other errors
+		fmt.Printf("KV lookup failure on %s: %s\n", filename, err)
+		return false
+	}
+	fmt.Printf("XXX err: %s\n", err)
+	fmt.Printf("XXX exists: %v\n", exists)
+	return exists
 }

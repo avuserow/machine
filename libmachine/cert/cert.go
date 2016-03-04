@@ -1,13 +1,13 @@
 package cert
 
 import (
+	"bytes"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/tls"
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
-	"io/ioutil"
 	"math/big"
 	"net"
 	"os"
@@ -126,22 +126,13 @@ func (xcg *X509CertGenerator) GenerateCACertificate(certFile, keyFile, org strin
 		return err
 	}
 
-	certOut, err := os.Create(certFile)
-	if err != nil {
-		return err
-	}
+	var certBuf bytes.Buffer
+	pem.Encode(&certBuf, &pem.Block{Type: "CERTIFICATE", Bytes: derBytes})
+	Store.Write(certFile, certBuf.Bytes(), 0, 0666)
 
-	pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: derBytes})
-	certOut.Close()
-
-	keyOut, err := os.OpenFile(keyFile, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
-	if err != nil {
-		return err
-
-	}
-
-	pem.Encode(keyOut, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(priv)})
-	keyOut.Close()
+	var keyBuf bytes.Buffer
+	pem.Encode(&keyBuf, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(priv)})
+	Store.Write(keyFile, keyBuf.Bytes(), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
 
 	return nil
 }
@@ -190,21 +181,13 @@ func (xcg *X509CertGenerator) GenerateCert(hosts []string, certFile, keyFile, ca
 		return err
 	}
 
-	certOut, err := os.Create(certFile)
-	if err != nil {
-		return err
-	}
+	var certBuf bytes.Buffer
+	pem.Encode(&certBuf, &pem.Block{Type: "CERTIFICATE", Bytes: derBytes})
+	Store.Write(certFile, certBuf.Bytes(), 0, 0666)
 
-	pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: derBytes})
-	certOut.Close()
-
-	keyOut, err := os.OpenFile(keyFile, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
-	if err != nil {
-		return err
-	}
-
-	pem.Encode(keyOut, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(priv)})
-	keyOut.Close()
+	var keyBuf bytes.Buffer
+	pem.Encode(&keyBuf, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(priv)})
+	Store.Write(keyFile, keyBuf.Bytes(), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
 
 	return nil
 }
@@ -216,19 +199,19 @@ func (xcg *X509CertGenerator) ReadTLSConfig(addr string, authOptions *auth.Optio
 	serverKeyPath := authOptions.ServerKeyPath
 
 	log.Debugf("Reading CA certificate from %s", caCertPath)
-	caCert, err := ioutil.ReadFile(caCertPath)
+	caCert, err := Store.Read(caCertPath)
 	if err != nil {
 		return nil, err
 	}
 
 	log.Debugf("Reading server certificate from %s", serverCertPath)
-	serverCert, err := ioutil.ReadFile(serverCertPath)
+	serverCert, err := Store.Read(serverCertPath)
 	if err != nil {
 		return nil, err
 	}
 
 	log.Debugf("Reading server key from %s", serverKeyPath)
-	serverKey, err := ioutil.ReadFile(serverKeyPath)
+	serverKey, err := Store.Read(serverKeyPath)
 	if err != nil {
 		return nil, err
 	}

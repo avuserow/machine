@@ -34,13 +34,13 @@ func NewCertFilestore(authOptions *auth.Options) (*CertFilestore, error) {
 	}, nil
 }
 
-func (s CertFilestore) Write(filename string, data []byte) error {
+func (s CertFilestore) Write(filename string, data []byte, flag int, perm os.FileMode) error {
 	fmt.Printf(`XXX Write("%s", <data>)
 `, filename)
 
 	// TODO - audit/verify this impl if we keep it
 	if _, err := os.Stat(filename); os.IsNotExist(err) {
-		return ioutil.WriteFile(filename, data, 0600)
+		return ioutil.WriteFile(filename, data, perm) // TODO - flag!
 	}
 
 	tmpfi, err := ioutil.TempFile(filepath.Dir(filename), ".tmp")
@@ -49,7 +49,7 @@ func (s CertFilestore) Write(filename string, data []byte) error {
 	}
 	defer os.Remove(tmpfi.Name())
 
-	if err = ioutil.WriteFile(tmpfi.Name(), data, 0600); err != nil {
+	if err = ioutil.WriteFile(tmpfi.Name(), data, perm); err != nil {
 		return err
 	}
 
@@ -71,4 +71,18 @@ func (s CertFilestore) Read(filename string) ([]byte, error) {
 	fmt.Printf(`XXX Read("%s")
 `, filename)
 	return ioutil.ReadFile(filename)
+}
+
+func (s CertFilestore) Exists(filename string) bool {
+	fmt.Printf(`XXX Exists("%s")
+`, filename)
+	if _, err := os.Stat(filename); os.IsNotExist(err) {
+		return false
+	} else if err == nil {
+		return true
+	} else {
+		// TODO log a better message on other errors
+		fmt.Printf("Stat failure on %s: %s\n", filename, err)
+		return false
+	}
 }
