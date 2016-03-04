@@ -63,13 +63,13 @@ func (s Kvstore) Save(host *host.Host) error {
 		return err
 	}
 
-	hostPath := filepath.Join(s.prefix, MachinePrefix, "machines", host.Name)
+	hostPath := filepath.Join(s.GetMachinesDir(), host.Name, "config.json")
 	err = s.store.Put(hostPath, data, nil)
 	return err
 }
 
 func (s Kvstore) Exists(name string) (bool, error) {
-	hostPath := filepath.Join(s.prefix, MachinePrefix, "machines", name)
+	hostPath := filepath.Join(s.GetMachinesDir(), name, "config.json")
 	return s.store.Exists(hostPath)
 }
 
@@ -105,7 +105,7 @@ func (s Kvstore) loadConfig(h *host.Host, data []byte) error {
 }
 
 func (s Kvstore) Load(name string) (*host.Host, error) {
-	hostPath := filepath.Join(s.prefix, MachinePrefix, "machines", name)
+	hostPath := filepath.Join(s.GetMachinesDir(), name)
 
 	if exists, err := s.Exists(name); err != nil || exists != true {
 		return nil, mcnerror.ErrHostDoesNotExist{
@@ -131,7 +131,7 @@ func (s Kvstore) Load(name string) (*host.Host, error) {
 	return host, nil
 }
 func (s Kvstore) List() ([]string, error) {
-	machineDir := filepath.Join(s.prefix, MachinePrefix, "machines")
+	machineDir := s.GetMachinesDir()
 	kvList, err := s.store.List(machineDir)
 	if err == store.ErrKeyNotFound {
 		// No machines set up
@@ -150,9 +150,9 @@ func (s Kvstore) List() ([]string, error) {
 }
 
 func (s Kvstore) Remove(name string) error {
-	hostPath := filepath.Join(s.prefix, MachinePrefix, "machines", name)
+	hostDir := filepath.Join(s.GetMachinesDir(), name)
 
-	err := s.store.Delete(hostPath)
+	err := s.store.DeleteTree(hostDir)
 	return err
 }
 
