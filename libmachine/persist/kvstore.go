@@ -12,6 +12,7 @@ import (
 	"github.com/docker/libkv/store/etcd"
 	"github.com/docker/machine/libmachine/host"
 	"github.com/docker/machine/libmachine/log"
+	"github.com/docker/machine/libmachine/mcnerror"
 )
 
 const MachinePrefix = "machine/v0"
@@ -105,6 +106,12 @@ func (s Kvstore) loadConfig(h *host.Host, data []byte) error {
 
 func (s Kvstore) Load(name string) (*host.Host, error) {
 	hostPath := filepath.Join(s.prefix, MachinePrefix, "machines", name)
+
+	if exists, err := s.Exists(name); err != nil || exists != true {
+		return nil, mcnerror.ErrHostDoesNotExist{
+			Name: name,
+		}
+	}
 
 	kvPair, err := s.store.Get(hostPath)
 	if err != nil {
