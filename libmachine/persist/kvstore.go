@@ -146,7 +146,8 @@ func (s Kvstore) Load(name string) (*host.Host, error) {
 	return host, nil
 }
 func (s Kvstore) List() ([]string, error) {
-	machineDir := s.GetMachinesDir()
+	machineDir := s.stripKV(s.GetMachinesDir())
+	log.Debugf("Looking for machines at %s", machineDir)
 	kvList, err := s.store.List(machineDir)
 	if err == store.ErrKeyNotFound {
 		// No machines set up
@@ -158,6 +159,7 @@ func (s Kvstore) List() ([]string, error) {
 	hostNames := []string{}
 
 	for _, kvPair := range kvList {
+		log.Debugf("Found %s", kvPair.Key)
 		hostNames = append(hostNames, path.Base(kvPair.Key))
 	}
 
