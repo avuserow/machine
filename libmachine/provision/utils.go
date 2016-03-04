@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"net/url"
 	"path"
-	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -74,15 +73,15 @@ func ConfigureAuth(p Provisioner) error {
 
 	log.Info("Copying certs to the local machine directory...")
 
-	if err := mcnutils.CopyFile(authOptions.CaCertPath, filepath.Join(authOptions.StorePath, "ca.pem")); err != nil {
+	if err := mcnutils.CopyFile(authOptions.CaCertPath, mcnutils.Join(authOptions.StorePath, "ca.pem")); err != nil {
 		return fmt.Errorf("Copying ca.pem to machine dir failed: %s", err)
 	}
 
-	if err := mcnutils.CopyFile(authOptions.ClientCertPath, filepath.Join(authOptions.StorePath, "cert.pem")); err != nil {
+	if err := mcnutils.CopyFile(authOptions.ClientCertPath, mcnutils.Join(authOptions.StorePath, "cert.pem")); err != nil {
 		return fmt.Errorf("Copying cert.pem to machine dir failed: %s", err)
 	}
 
-	if err := mcnutils.CopyFile(authOptions.ClientKeyPath, filepath.Join(authOptions.StorePath, "key.pem")); err != nil {
+	if err := mcnutils.CopyFile(authOptions.ClientKeyPath, mcnutils.Join(authOptions.StorePath, "key.pem")); err != nil {
 		return fmt.Errorf("Copying key.pem to machine dir failed: %s", err)
 	}
 

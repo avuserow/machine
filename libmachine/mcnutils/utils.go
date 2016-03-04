@@ -148,8 +148,14 @@ func WriteFile(filename string, data []byte) error {
 }
 
 func Join(base string, elem ...string) string {
+	fmt.Printf("XXX mcnutils Join %s %v\n", base, elem)
+
 	baseURL, err := url.Parse(base)
 	if err == nil {
+		fmt.Printf("XXX Scheme:%s \n", baseURL.Scheme)
+		fmt.Printf("XXX Host:%s \n", baseURL.Host)
+		fmt.Printf("XXX Path:%s \n", baseURL.Path)
+		fmt.Printf("XXX additional path:%v \n", elem)
 		if len(baseURL.Scheme) > 1 {
 			baseURL.Path = filepath.Join(append([]string{baseURL.Path}, elem...)...)
 			return baseURL.String()
