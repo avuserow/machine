@@ -5,11 +5,28 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
+	"io/ioutil"
+	"net/url"
 	"os"
+	"path/filepath"
 	"runtime"
 	"strconv"
+	"strings"
 	"time"
+
+	"github.com/docker/libkv"
+	"github.com/docker/libkv/store"
+	"github.com/docker/libkv/store/etcd"
 )
+
+const MachinePrefix = "machine/v0"
+
+func init() {
+	etcd.Register()
+	//consul.Register()
+	//zookeeper.Register()
+	//boltdb.Register()
+}
 
 // GetHomeDir returns the home directory
 // TODO: Having this here just strikes me as dangerous, but some of the drivers
@@ -42,34 +59,103 @@ func GetUsername() string {
 func CopyFile(src, dst string) error {
 	fmt.Printf(`XXX In CopyFile("%s", "%s")
 `, src, dst)
-	in, err := os.Open(src)
+
+	// TODO - handle permissions sanely
+
+	data, err := ReadFile(src)
 	if err != nil {
 		return err
 	}
+	return WriteFile(dst, data)
+}
 
-	defer in.Close()
+func ReadFile(filename string) ([]byte, error) {
+	// XXX this is not a great model... but will work for now...
+	storeURL, err := url.Parse(filename)
+	if err == nil {
+		// The scheme will be blank on unix paths, might be a drive letter (single char)
+		// or a multi-character scheme that libkv will hopefully handle
+		if len(storeURL.Scheme) > 1 {
+			var kvStore store.Store
+			switch storeURL.Scheme {
+			case "etcd":
+				// TODO - figure out how to get TLS support in here...
+				kvStore, err = libkv.NewStore(
+					store.ETCD,
+					[]string{storeURL.Host},
+					&store.Config{
+						ConnectionTimeout: 10 * time.Second,
+					},
+				)
+			default:
+				return nil, fmt.Errorf("Unsupporetd KV store type: %s", storeURL.Scheme)
+			}
 
-	out, err := os.Create(dst)
-	if err != nil {
-		return err
+			fmt.Printf("XXX filename %s\n", filename)
+			prefix := fmt.Sprintf("%s://%s", storeURL.Scheme, storeURL.Host)
+			path := strings.TrimPrefix(filename, prefix)
+			key := filepath.Join("/", MachinePrefix, path)
+			fmt.Printf("XXX mcnutils KV Read -> %s\n", key)
+			kvpair, err := kvStore.Get(key)
+			if err != nil {
+				return nil, err
+			}
+			fmt.Printf("XXX err: %s\n", err)
+			return kvpair.Value, nil
+
+		}
 	}
+	return ioutil.ReadFile(filename)
 
-	defer out.Close()
+}
+func WriteFile(filename string, data []byte) error {
+	// XXX this is not a great model... but will work for now...
+	storeURL, err := url.Parse(filename)
+	if err == nil {
+		// The scheme will be blank on unix paths, might be a drive letter (single char)
+		// or a multi-character scheme that libkv will hopefully handle
+		if len(storeURL.Scheme) > 1 {
+			var kvStore store.Store
+			switch storeURL.Scheme {
+			case "etcd":
+				// TODO - figure out how to get TLS support in here...
+				kvStore, err = libkv.NewStore(
+					store.ETCD,
+					[]string{storeURL.Host},
+					&store.Config{
+						ConnectionTimeout: 10 * time.Second,
+					},
+				)
+			default:
+				return fmt.Errorf("Unsupporetd KV store type: %s", storeURL.Scheme)
+			}
 
-	if _, err = io.Copy(out, in); err != nil {
-		return err
+			fmt.Printf("XXX filename %s\n", filename)
+			prefix := fmt.Sprintf("%s://%s", storeURL.Scheme, storeURL.Host)
+			path := strings.TrimPrefix(filename, prefix)
+			key := filepath.Join("/", MachinePrefix, path)
+			fmt.Printf("XXX mcnutils KV Write -> %s\n", key)
+			err := kvStore.Put(key, data, nil)
+			if err != nil {
+				return err
+			}
+			fmt.Printf("XXX err: %s\n", err)
+			return nil
+
+		}
 	}
+	return ioutil.WriteFile(filename, data, 0600)
+}
 
-	fi, err := os.Stat(src)
-	if err != nil {
-		return err
+func Join(base string, elem ...string) string {
+	baseURL, err := url.Parse(base)
+	if err == nil {
+		if len(baseURL.Scheme) > 1 {
+			baseURL.Path = filepath.Join(append([]string{baseURL.Path}, elem...)...)
+			return baseURL.String()
+		}
 	}
-
-	if err := os.Chmod(dst, fi.Mode()); err != nil {
-		return err
-	}
-
-	return nil
+	return filepath.Join(append([]string{base}, elem...)...)
 }
 
 func WaitForSpecificOrError(f func() (bool, error), maxAttempts int, waitInterval time.Duration) error {

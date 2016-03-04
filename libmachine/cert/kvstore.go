@@ -5,7 +5,6 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/docker/libkv"
@@ -53,18 +52,18 @@ func NewCertKvstore(authOptions *auth.Options) (*CertKvstore, error) {
 	}
 
 	// XXX This feels super messy - there's got to be a better way.
-	prefix := fmt.Sprintf("%s:/%s", kvurl.Scheme, kvurl.Host)
-	authOptions.CertDir = strings.TrimPrefix(authOptions.CertDir, prefix)
-	authOptions.CaCertPath = strings.TrimPrefix(authOptions.CaCertPath, prefix)
-	authOptions.CaPrivateKeyPath = strings.TrimPrefix(authOptions.CaPrivateKeyPath, prefix)
-	authOptions.CaCertRemotePath = strings.TrimPrefix(authOptions.CaCertRemotePath, prefix)
-	authOptions.ServerCertPath = strings.TrimPrefix(authOptions.ServerCertPath, prefix)
-	authOptions.ServerKeyPath = strings.TrimPrefix(authOptions.ServerKeyPath, prefix)
-	authOptions.ClientKeyPath = strings.TrimPrefix(authOptions.ClientKeyPath, prefix)
-	authOptions.ServerCertRemotePath = strings.TrimPrefix(authOptions.ServerCertRemotePath, prefix)
-	authOptions.ServerKeyRemotePath = strings.TrimPrefix(authOptions.ServerKeyRemotePath, prefix)
-	authOptions.ClientCertPath = strings.TrimPrefix(authOptions.ClientCertPath, prefix)
-	authOptions.StorePath = strings.TrimPrefix(authOptions.StorePath, prefix)
+	//prefix := fmt.Sprintf("%s:/%s", kvurl.Scheme, kvurl.Host)
+	//authOptions.CertDir = strings.TrimPrefix(authOptions.CertDir, prefix)
+	//authOptions.CaCertPath = strings.TrimPrefix(authOptions.CaCertPath, prefix)
+	//authOptions.CaPrivateKeyPath = strings.TrimPrefix(authOptions.CaPrivateKeyPath, prefix)
+	//authOptions.CaCertRemotePath = strings.TrimPrefix(authOptions.CaCertRemotePath, prefix)
+	//authOptions.ServerCertPath = strings.TrimPrefix(authOptions.ServerCertPath, prefix)
+	//authOptions.ServerKeyPath = strings.TrimPrefix(authOptions.ServerKeyPath, prefix)
+	//authOptions.ClientKeyPath = strings.TrimPrefix(authOptions.ClientKeyPath, prefix)
+	//authOptions.ServerCertRemotePath = strings.TrimPrefix(authOptions.ServerCertRemotePath, prefix)
+	//authOptions.ServerKeyRemotePath = strings.TrimPrefix(authOptions.ServerKeyRemotePath, prefix)
+	//authOptions.ClientCertPath = strings.TrimPrefix(authOptions.ClientCertPath, prefix)
+	//authOptions.StorePath = strings.TrimPrefix(authOptions.StorePath, prefix)
 	fmt.Printf("XXX CertDir: %s\n", authOptions.CertDir)
 	fmt.Printf("XXX CaCertPath: %s\n", authOptions.CaCertPath)
 

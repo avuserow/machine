@@ -3,7 +3,6 @@ package libmachine
 import (
 	"fmt"
 	"net/url"
-	"path/filepath"
 
 	"io"
 
@@ -82,12 +81,12 @@ func (api *Client) NewHost(driverName string, rawDriver []byte) (*host.Host, err
 		HostOptions: &host.Options{
 			AuthOptions: &auth.Options{
 				CertDir:          api.certsDir,
-				CaCertPath:       filepath.Join(api.certsDir, "ca.pem"),
-				CaPrivateKeyPath: filepath.Join(api.certsDir, "ca-key.pem"),
-				ClientCertPath:   filepath.Join(api.certsDir, "cert.pem"),
-				ClientKeyPath:    filepath.Join(api.certsDir, "key.pem"),
-				ServerCertPath:   filepath.Join(api.GetMachinesDir(), "server.pem"),
-				ServerKeyPath:    filepath.Join(api.GetMachinesDir(), "server-key.pem"),
+				CaCertPath:       mcnutils.Join(api.certsDir, "ca.pem"),
+				CaPrivateKeyPath: mcnutils.Join(api.certsDir, "ca-key.pem"),
+				ClientCertPath:   mcnutils.Join(api.certsDir, "cert.pem"),
+				ClientKeyPath:    mcnutils.Join(api.certsDir, "key.pem"),
+				ServerCertPath:   mcnutils.Join(api.GetMachinesDir(), "server.pem"),
+				ServerKeyPath:    mcnutils.Join(api.GetMachinesDir(), "server-key.pem"),
 			},
 			EngineOptions: &engine.Options{
 				InstallURL:    drivers.DefaultEngineInstallURL,
