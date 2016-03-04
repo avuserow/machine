@@ -1,6 +1,7 @@
 package cert
 
 import (
+	"bytes"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/tls"
@@ -126,22 +127,14 @@ func (xcg *X509CertGenerator) GenerateCACertificate(certFile, keyFile, org strin
 		return err
 	}
 
-	certOut, err := os.Create(certFile)
-	if err != nil {
-		return err
-	}
+	var certBuf bytes.Buffer
+	pem.Encode(&certBuf, &pem.Block{Type: "CERTIFICATE", Bytes: derBytes})
+	Store.Write(certFile, certBuf.Bytes(), 0, 0666)
 
-	pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: derBytes})
-	certOut.Close()
+	var keyBuf bytes.Buffer
 
-	keyOut, err := os.OpenFile(keyFile, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
-	if err != nil {
-		return err
-
-	}
-
-	pem.Encode(keyOut, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(priv)})
-	keyOut.Close()
+	pem.Encode(&keyBuf, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(priv)})
+	Store.Write(keyFile, keyBuf.Bytes(), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
 
 	return nil
 }

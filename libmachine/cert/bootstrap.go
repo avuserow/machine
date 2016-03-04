@@ -37,13 +37,8 @@ func BootstrapCertificates(authOptions *auth.Options) error {
 
 	bits := 2048
 
-	if _, err := os.Stat(caCertPath); os.IsNotExist(err) {
+	if !Store.Exists(caCertPath) {
 		log.Infof("Creating CA: %s", caCertPath)
-
-		// check if the key path exists; if so, error
-		if _, err := os.Stat(caPrivateKeyPath); err == nil {
-			return errors.New("The CA key already exists.  Please remove it or specify a different key/cert.")
-		}
 
 		if err := GenerateCACertificate(caCertPath, caPrivateKeyPath, caOrg, bits); err != nil {
 			return fmt.Errorf("Generating CA certificate failed: %s", err)
