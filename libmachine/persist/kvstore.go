@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"path"
 	"strings"
 	"time"
 
@@ -41,7 +42,7 @@ func (s Kvstore) stripKV(path string) string {
 }
 
 func NewKvstore(path string, certsDir string) *Kvstore {
-	log.Debugf("XXX NewFilestore(%s, %s)", path, certsDir)
+	log.Debugf("XXX NewKvstore(%s, %s)", path, certsDir)
 	var kvStore store.Store
 	kvurl, err := url.Parse(path)
 	if err != nil {
@@ -119,6 +120,7 @@ func (s Kvstore) loadConfig(h *host.Host, data []byte) error {
 }
 
 func (s Kvstore) Load(name string) (*host.Host, error) {
+	log.Debugf("XXX Load input name is -> %s", name)
 	hostPath := s.stripKV(mcnutils.Join(s.GetMachinesDir(), name, "config.json"))
 	log.Debugf("XXX Load -> %s", hostPath)
 
@@ -156,7 +158,7 @@ func (s Kvstore) List() ([]string, error) {
 	hostNames := []string{}
 
 	for _, kvPair := range kvList {
-		hostNames = append(hostNames, kvPair.Key)
+		hostNames = append(hostNames, path.Base(kvPair.Key))
 	}
 
 	return hostNames, nil

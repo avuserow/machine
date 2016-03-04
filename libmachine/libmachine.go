@@ -45,16 +45,24 @@ type Client struct {
 
 func NewClient(storePath, certsDir string) *Client {
 	// Determine which type of store to generate
-	storeURL, err := url.Parse(storePath)
+	log.Debugf("In NewClient(%s, %s)", storePath, certsDir)
 	var store persist.Store
+	storeURL, err := url.Parse(storePath)
 	if err == nil {
+		log.Debugf("Parsed URL Scheme: %s", storeURL.Scheme)
+		log.Debugf("Parsed URL Host: %s", storeURL.Host)
+		log.Debugf("Parsed URL Path: %s", storeURL.Path)
 		// The scheme will be blank on unix paths, might be a drive letter (single char)
 		// or a multi-character scheme that libkv will hopefully handle
 		if len(storeURL.Scheme) > 1 {
+			log.Debugf("Generated new KV store")
 			store = persist.NewKvstore(storePath, certsDir)
 		}
+	} else {
+		log.Debugf("Failed to parse: %s", err)
 	}
 	if store == nil {
+		log.Debugf("Generated new file store")
 		store = persist.NewFilestore(storePath, certsDir, certsDir)
 	}
 
