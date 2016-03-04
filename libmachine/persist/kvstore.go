@@ -103,7 +103,7 @@ func (s Kvstore) loadConfig(h *host.Host, data []byte) error {
 	h.Name = name
 
 	// If we end up performing a migration, we should save afterwards so we don't have to do it again on subsequent invocations.
-	log.Infof("AK: migration performed: %s", migrationPerformed)
+	log.Debugf("AK: migration performed: %v", migrationPerformed)
 	if migrationPerformed {
 		// XXX TODO do we want to save?
 
