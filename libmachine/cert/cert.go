@@ -205,6 +205,13 @@ func (xcg *X509CertGenerator) ReadTLSConfig(addr string, authOptions *auth.Optio
 	caCertPath := authOptions.CaCertPath
 	serverCertPath := authOptions.ServerCertPath
 	serverKeyPath := authOptions.ServerKeyPath
+	if Store == nil {
+		store, err := NewCertStore(authOptions)
+		if err != nil {
+			return nil, err
+		}
+		Store = store
+	}
 
 	log.Debugf("Reading CA certificate from %s", caCertPath)
 	caCert, err := Store.Read(caCertPath)

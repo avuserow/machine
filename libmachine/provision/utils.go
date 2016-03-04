@@ -2,7 +2,6 @@ package provision
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net/url"
 	"path"
 	"regexp"
@@ -120,16 +119,16 @@ func ConfigureAuth(p Provisioner) error {
 	}
 
 	// upload certs and configure TLS auth
-	caCert, err := ioutil.ReadFile(authOptions.CaCertPath)
+	caCert, err := mcnutils.ReadFile(authOptions.CaCertPath)
 	if err != nil {
 		return err
 	}
 
-	serverCert, err := ioutil.ReadFile(authOptions.ServerCertPath)
+	serverCert, err := mcnutils.ReadFile(authOptions.ServerCertPath)
 	if err != nil {
 		return err
 	}
-	serverKey, err := ioutil.ReadFile(authOptions.ServerKeyPath)
+	serverKey, err := mcnutils.ReadFile(authOptions.ServerKeyPath)
 	if err != nil {
 		return err
 	}
