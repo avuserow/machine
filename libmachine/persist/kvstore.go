@@ -31,7 +31,7 @@ type Kvstore struct {
 }
 
 func NewKvstore(path string, certsDir string) *Kvstore {
-	fmt.Printf(`XXX NewKvstore("%s", "%s")`, path, certsDir)
+	log.Debugf("XXX NewFilestore(%s, %s)", path, certsDir)
 	var kvStore store.Store
 	kvurl, err := url.Parse(path)
 	if err != nil {

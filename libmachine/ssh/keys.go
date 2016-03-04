@@ -21,6 +21,7 @@ import (
 	"github.com/docker/libkv"
 	"github.com/docker/libkv/store"
 	"github.com/docker/libkv/store/etcd"
+	"github.com/docker/machine/libmachine/log"
 )
 
 var (
@@ -97,9 +98,9 @@ func writeFile(filename string, data []byte, flag int, mode os.FileMode) error {
 	path := strings.TrimPrefix(filename, Prefix)
 
 	key := filepath.Join("/", MachinePrefix, path)
-	fmt.Printf("XXX KV SSH Write -> %s\n", key)
+	log.Debugf("XXX KV SSH Write -> %s", key)
 	err := Store.Put(key, data, nil)
-	fmt.Printf("XXX err: %s\n", err)
+	log.Debugf("XXX err: %s", err)
 	return err
 }
 
@@ -156,22 +157,21 @@ func Exists(filename string) bool {
 	path := strings.TrimPrefix(filename, Prefix)
 
 	key := filepath.Join("/", MachinePrefix, path)
-	fmt.Printf("XXX KV Exists -> %s\n", key)
+	log.Debugf("XXX KV Exists -> %s", key)
 	exists, err := Store.Exists(key)
 	if err != nil {
 		// TODO log a better message on other errors
-		fmt.Printf("KV lookup failure on %s: %s\n", filename, err)
+		log.Errorf("KV lookup failure on %s: %s", filename, err)
 		return false
 	}
-	fmt.Printf("XXX err: %s\n", err)
-	fmt.Printf("XXX exists: %v\n", exists)
+	log.Debugf("XXX Exists: %v", exists)
 	return exists
 }
 
 // GenerateSSHKey generates SSH keypair based on path of the private key
 // The public key would be generated to the same path with ".pub" added
 func GenerateSSHKey(path string) error {
-	fmt.Printf("XXX GenerateSSHKey -> %s\n", path)
+	log.Debugf("XXX GenerateSSHKey -> %s", path)
 	if err := setStore(path); err != nil {
 		return err
 	}

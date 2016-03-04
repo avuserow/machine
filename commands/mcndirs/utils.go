@@ -1,7 +1,6 @@
 package mcndirs
 
 import (
-	"fmt"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -17,8 +16,6 @@ func GetBaseDir() string {
 	if BaseDir == "" {
 		BaseDir = filepath.Join(mcnutils.GetHomeDir(), ".docker", "machine")
 	}
-	fmt.Printf(`XXX GetBaseDir() -> "%s"
-`, BaseDir)
 	return BaseDir
 }
 

@@ -17,6 +17,7 @@ import (
 	"github.com/docker/libkv"
 	"github.com/docker/libkv/store"
 	"github.com/docker/libkv/store/etcd"
+	"github.com/docker/machine/libmachine/log"
 )
 
 const MachinePrefix = "machine/v0"
@@ -57,8 +58,7 @@ func GetUsername() string {
 }
 
 func CopyFile(src, dst string) error {
-	fmt.Printf(`XXX In CopyFile("%s", "%s")
-`, src, dst)
+	log.Debugf("XXX CopyFile(%s, %s)", src, dst)
 
 	// TODO - handle permissions sanely
 
@@ -97,16 +97,15 @@ func ReadFile(filename string) ([]byte, error) {
 				return nil, fmt.Errorf("Unsupporetd KV store type: %s", storeURL.Scheme)
 			}
 
-			fmt.Printf("XXX filename %s\n", filename)
 			prefix := fmt.Sprintf("%s://%s", storeURL.Scheme, storeURL.Host)
 			path := strings.TrimPrefix(filename, prefix)
 			key := filepath.Join("/", MachinePrefix, path)
-			fmt.Printf("XXX mcnutils KV Read -> %s\n", key)
+			log.Debugf("XXX mcnutils KV Read -> %s", key)
 			kvpair, err := kvStore.Get(key)
 			if err != nil {
+				log.Error(err)
 				return nil, err
 			}
-			fmt.Printf("XXX err: %s\n", err)
 			return kvpair.Value, nil
 
 		}
@@ -140,16 +139,15 @@ func WriteFile(filename string, data []byte) error {
 				return fmt.Errorf("Unsupporetd KV store type: %s", storeURL.Scheme)
 			}
 
-			fmt.Printf("XXX filename %s\n", filename)
 			prefix := fmt.Sprintf("%s://%s", storeURL.Scheme, storeURL.Host)
 			path := strings.TrimPrefix(filename, prefix)
 			key := filepath.Join("/", MachinePrefix, path)
-			fmt.Printf("XXX mcnutils KV Write -> %s\n", key)
+			log.Debugf("XXX mcnutils KV Write -> %s", key)
 			err := kvStore.Put(key, data, nil)
 			if err != nil {
+				log.Error(err)
 				return err
 			}
-			fmt.Printf("XXX err: %s\n", err)
 			return nil
 
 		}
@@ -158,26 +156,18 @@ func WriteFile(filename string, data []byte) error {
 }
 
 func Join(base string, elem ...string) string {
-	fmt.Printf("XXX mcnutils Join %s %v\n", base, elem)
-
 	// TOTAL hack - need to fix this
 	if strings.HasPrefix(base, "etcd:/") && string(base[6]) != "/" {
 		base = "etcd:/" + base[5:]
 	}
 	baseURL, err := url.Parse(base)
 	if err == nil {
-		fmt.Printf("XXX Scheme:%s \n", baseURL.Scheme)
-		fmt.Printf("XXX Host:%s \n", baseURL.Host)
-		fmt.Printf("XXX Path:%s \n", baseURL.Path)
-		fmt.Printf("XXX additional path:%v \n", elem)
 		if len(baseURL.Scheme) > 1 {
 			baseURL.Path = filepath.Join(append([]string{baseURL.Path}, elem...)...)
-			fmt.Printf("XXX Final path:%s \n", baseURL.String())
 			return baseURL.String()
 		}
 	}
 	ret := filepath.Join(append([]string{base}, elem...)...)
-	fmt.Printf("XXX Final path (non-url version):%s \n", ret)
 	return ret
 }
 

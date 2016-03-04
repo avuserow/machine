@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/docker/machine/libmachine/auth"
+	"github.com/docker/machine/libmachine/log"
 )
 
 type CertFilestore struct {
@@ -15,8 +16,7 @@ type CertFilestore struct {
 }
 
 func NewCertFilestore(authOptions *auth.Options) (*CertFilestore, error) {
-	fmt.Printf(`XXX NewCertFilestore(%#v)
-`, authOptions)
+	log.Debugf("XXX NewCertFilestore(%#v)", authOptions)
 
 	if _, err := os.Stat(authOptions.CertDir); err != nil {
 		if os.IsNotExist(err) {
@@ -35,8 +35,7 @@ func NewCertFilestore(authOptions *auth.Options) (*CertFilestore, error) {
 }
 
 func (s CertFilestore) Write(filename string, data []byte, flag int, perm os.FileMode) error {
-	fmt.Printf(`XXX Write("%s", <data>)
-`, filename)
+	log.Debugf("XXX CertFilestore.Write(%s, <data>)", filename)
 
 	// TODO - audit/verify this impl if we keep it
 	if _, err := os.Stat(filename); os.IsNotExist(err) {
@@ -68,21 +67,18 @@ func (s CertFilestore) Write(filename string, data []byte, flag int, perm os.Fil
 }
 
 func (s CertFilestore) Read(filename string) ([]byte, error) {
-	fmt.Printf(`XXX Read("%s")
-`, filename)
+	log.Debugf("XXX CertFilestore.Read(%s, <data>)", filename)
 	return ioutil.ReadFile(filename)
 }
 
 func (s CertFilestore) Exists(filename string) bool {
-	fmt.Printf(`XXX Exists("%s")
-`, filename)
+	log.Debugf("XXX CertFilestore.Exists(%s, <data>)", filename)
 	if _, err := os.Stat(filename); os.IsNotExist(err) {
 		return false
 	} else if err == nil {
 		return true
 	} else {
-		// TODO log a better message on other errors
-		fmt.Printf("Stat failure on %s: %s\n", filename, err)
+		log.Errorf("Stat failure on %s: %s", filename, err)
 		return false
 	}
 }
