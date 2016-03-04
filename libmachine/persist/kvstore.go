@@ -179,3 +179,24 @@ func (s Kvstore) GetMachinesDir() string {
 	url2.Path = mcnutils.Join(s.prefix, MachinePrefix, "machines")
 	return url2.String()
 }
+
+func (s Kvstore) ListMachineFiles(host *host.Host) ([]string, error) {
+	machineDir := s.stripKV(mcnutils.Join(s.GetMachinesDir(), host.Name))
+	log.Debugf("Looking for machines at %s", machineDir)
+	kvList, err := s.store.List(machineDir)
+	if err == store.ErrKeyNotFound {
+		// No machines set up
+		return []string{}, nil
+	} else if err != nil {
+		return nil, err
+	}
+
+	fileNames := []string{}
+
+	for _, kvPair := range kvList {
+		log.Debugf("Found %s", kvPair.Key)
+		fileNames = append(fileNames, mcnutils.Join(host.Name, path.Base(kvPair.Key)))
+	}
+
+	return fileNames, nil
+}
