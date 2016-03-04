@@ -105,7 +105,7 @@ func (s Kvstore) loadConfig(h *host.Host, data []byte) error {
 }
 
 func (s Kvstore) Load(name string) (*host.Host, error) {
-	hostPath := filepath.Join(s.GetMachinesDir(), name)
+	hostPath := filepath.Join(s.GetMachinesDir(), name, "config.json")
 
 	if exists, err := s.Exists(name); err != nil || exists != true {
 		return nil, mcnerror.ErrHostDoesNotExist{
@@ -117,8 +117,6 @@ func (s Kvstore) Load(name string) (*host.Host, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	fmt.Println("Load: ", kvPair.Key)
 
 	host := &host.Host{
 		Name: name,
