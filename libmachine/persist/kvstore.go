@@ -25,8 +25,9 @@ func init() {
 }
 
 type Kvstore struct {
-	store  store.Store
-	prefix string
+	storeURL url.URL
+	store    store.Store
+	prefix   string
 }
 
 func NewKvstore(path string, certsDir string) *Kvstore {
@@ -52,8 +53,9 @@ func NewKvstore(path string, certsDir string) *Kvstore {
 	}
 
 	return &Kvstore{
-		store:  kvStore,
-		prefix: kvurl.Path,
+		storeURL: *kvurl,
+		store:    kvStore,
+		prefix:   kvurl.Path,
 	}
 }
 
@@ -155,5 +157,7 @@ func (s Kvstore) Remove(name string) error {
 }
 
 func (s Kvstore) GetMachinesDir() string {
-	return filepath.Join(s.prefix, MachinePrefix, "machines")
+	url2 := s.storeURL
+	url2.Path = filepath.Join(s.prefix, MachinePrefix, "machines")
+	return url2.String()
 }

@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/docker/libkv"
@@ -23,6 +24,7 @@ func init() {
 }
 
 type CertKvstore struct {
+	storeURL    url.URL
 	authOptions *auth.Options
 	store       store.Store
 	prefix      string
@@ -68,13 +70,17 @@ func NewCertKvstore(authOptions *auth.Options) (*CertKvstore, error) {
 	fmt.Printf("XXX CaCertPath: %s\n", authOptions.CaCertPath)
 
 	return &CertKvstore{
-		store:       kvStore,
-		prefix:      kvurl.Path,
+		storeURL: *kvurl,
+		store:    kvStore,
+		//prefix:      kvurl.Path, // TODO - needs more work to get the sequencing right
 		authOptions: authOptions,
 	}, nil
 }
 
 func (s CertKvstore) Write(filename string, data []byte, flag int, perm os.FileMode) error {
+	// TODO - this pattern needs cleanup
+	prefix := fmt.Sprintf("%s://%s", s.storeURL.Scheme, s.storeURL.Host)
+	filename = strings.TrimPrefix(filename, prefix)
 
 	key := filepath.Join("/", MachinePrefix, s.prefix, filename)
 	fmt.Printf("XXX KV Write -> %s\n", key)
@@ -84,6 +90,8 @@ func (s CertKvstore) Write(filename string, data []byte, flag int, perm os.FileM
 }
 
 func (s CertKvstore) Read(filename string) ([]byte, error) {
+	prefix := fmt.Sprintf("%s://%s", s.storeURL.Scheme, s.storeURL.Host)
+	filename = strings.TrimPrefix(filename, prefix)
 	key := filepath.Join("/", MachinePrefix, s.prefix, filename)
 	fmt.Printf("XXX KV Read -> %s\n", key)
 	kvpair, err := s.store.Get(key)
@@ -94,6 +102,8 @@ func (s CertKvstore) Read(filename string) ([]byte, error) {
 	return kvpair.Value, nil
 }
 func (s CertKvstore) Exists(filename string) bool {
+	prefix := fmt.Sprintf("%s://%s", s.storeURL.Scheme, s.storeURL.Host)
+	filename = strings.TrimPrefix(filename, prefix)
 	key := filepath.Join("/", MachinePrefix, s.prefix, filename)
 	fmt.Printf("XXX KV Exists -> %s\n", key)
 	exists, err := s.store.Exists(key)

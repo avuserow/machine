@@ -71,6 +71,12 @@ func CopyFile(src, dst string) error {
 
 func ReadFile(filename string) ([]byte, error) {
 	// XXX this is not a great model... but will work for now...
+
+	// TOTAL hack - need to fix this
+	if strings.HasPrefix(filename, "etcd:/") && string(filename[6]) != "/" {
+		filename = "etcd:/" + filename[5:]
+	}
+
 	storeURL, err := url.Parse(filename)
 	if err == nil {
 		// The scheme will be blank on unix paths, might be a drive letter (single char)
@@ -110,6 +116,10 @@ func ReadFile(filename string) ([]byte, error) {
 }
 func WriteFile(filename string, data []byte) error {
 	// XXX this is not a great model... but will work for now...
+	// TOTAL hack - need to fix this
+	if strings.HasPrefix(filename, "etcd:/") && string(filename[6]) != "/" {
+		filename = "etcd:/" + filename[5:]
+	}
 	storeURL, err := url.Parse(filename)
 	if err == nil {
 		// The scheme will be blank on unix paths, might be a drive letter (single char)
@@ -150,6 +160,10 @@ func WriteFile(filename string, data []byte) error {
 func Join(base string, elem ...string) string {
 	fmt.Printf("XXX mcnutils Join %s %v\n", base, elem)
 
+	// TOTAL hack - need to fix this
+	if strings.HasPrefix(base, "etcd:/") && string(base[6]) != "/" {
+		base = "etcd:/" + base[5:]
+	}
 	baseURL, err := url.Parse(base)
 	if err == nil {
 		fmt.Printf("XXX Scheme:%s \n", baseURL.Scheme)
@@ -158,10 +172,13 @@ func Join(base string, elem ...string) string {
 		fmt.Printf("XXX additional path:%v \n", elem)
 		if len(baseURL.Scheme) > 1 {
 			baseURL.Path = filepath.Join(append([]string{baseURL.Path}, elem...)...)
+			fmt.Printf("XXX Final path:%s \n", baseURL.String())
 			return baseURL.String()
 		}
 	}
-	return filepath.Join(append([]string{base}, elem...)...)
+	ret := filepath.Join(append([]string{base}, elem...)...)
+	fmt.Printf("XXX Final path (non-url version):%s \n", ret)
+	return ret
 }
 
 func WaitForSpecificOrError(f func() (bool, error), maxAttempts int, waitInterval time.Duration) error {
