@@ -161,7 +161,15 @@ func (xcg *X509CertGenerator) GenerateCert(hosts []string, certFile, keyFile, ca
 		}
 	}
 
-	tlsCert, err := tls.LoadX509KeyPair(caFile, caKeyFile)
+	caPEM, err := Store.Read(caFile)
+	if err != nil {
+		return err
+	}
+	caKeyPEM, err := Store.Read(caKeyFile)
+	if err != nil {
+		return err
+	}
+	tlsCert, err := tls.X509KeyPair(caPEM, caKeyPEM)
 	if err != nil {
 		return err
 	}
