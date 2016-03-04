@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
-	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/docker/libkv"
@@ -13,6 +13,7 @@ import (
 	"github.com/docker/machine/libmachine/host"
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/mcnerror"
+	"github.com/docker/machine/libmachine/mcnutils"
 )
 
 const MachinePrefix = "machine/v0"
@@ -28,6 +29,15 @@ type Kvstore struct {
 	storeURL url.URL
 	store    store.Store
 	prefix   string
+}
+
+func (s Kvstore) stripKV(path string) string {
+	prefix := fmt.Sprintf("%s://%s", s.storeURL.Scheme, s.storeURL.Host)
+	p := strings.TrimPrefix(path, prefix)
+	// HACK - we still have places that are doing filepath join and screwing up the URLs
+	prefix2 := fmt.Sprintf("%s:/%s", s.storeURL.Scheme, s.storeURL.Host)
+	p = strings.TrimPrefix(p, prefix2)
+	return p
 }
 
 func NewKvstore(path string, certsDir string) *Kvstore {
@@ -55,7 +65,7 @@ func NewKvstore(path string, certsDir string) *Kvstore {
 	return &Kvstore{
 		storeURL: *kvurl,
 		store:    kvStore,
-		prefix:   kvurl.Path,
+		//prefix:   kvurl.Path, // TODO - this doesn't work - needs more cleanup
 	}
 }
 
@@ -65,13 +75,15 @@ func (s Kvstore) Save(host *host.Host) error {
 		return err
 	}
 
-	hostPath := filepath.Join(s.GetMachinesDir(), host.Name, "config.json")
+	hostPath := s.stripKV(mcnutils.Join(s.GetMachinesDir(), host.Name, "config.json"))
+	log.Debugf("XXX SaveHost -> %s", hostPath)
 	err = s.store.Put(hostPath, data, nil)
 	return err
 }
 
 func (s Kvstore) Exists(name string) (bool, error) {
-	hostPath := filepath.Join(s.GetMachinesDir(), name, "config.json")
+	hostPath := s.stripKV(mcnutils.Join(s.GetMachinesDir(), name, "config.json"))
+	log.Debugf("XXX Exists -> %s", hostPath)
 	return s.store.Exists(hostPath)
 }
 
@@ -107,7 +119,8 @@ func (s Kvstore) loadConfig(h *host.Host, data []byte) error {
 }
 
 func (s Kvstore) Load(name string) (*host.Host, error) {
-	hostPath := filepath.Join(s.GetMachinesDir(), name, "config.json")
+	hostPath := s.stripKV(mcnutils.Join(s.GetMachinesDir(), name, "config.json"))
+	log.Debugf("XXX Load -> %s", hostPath)
 
 	if exists, err := s.Exists(name); err != nil || exists != true {
 		return nil, mcnerror.ErrHostDoesNotExist{
@@ -150,7 +163,8 @@ func (s Kvstore) List() ([]string, error) {
 }
 
 func (s Kvstore) Remove(name string) error {
-	hostDir := filepath.Join(s.GetMachinesDir(), name)
+	hostDir := s.stripKV(mcnutils.Join(s.GetMachinesDir(), name))
+	log.Debugf("XXX Remove -> %s", hostDir)
 
 	err := s.store.DeleteTree(hostDir)
 	return err
@@ -158,6 +172,6 @@ func (s Kvstore) Remove(name string) error {
 
 func (s Kvstore) GetMachinesDir() string {
 	url2 := s.storeURL
-	url2.Path = filepath.Join(s.prefix, MachinePrefix, "machines")
+	url2.Path = mcnutils.Join(s.prefix, MachinePrefix, "machines")
 	return url2.String()
 }
