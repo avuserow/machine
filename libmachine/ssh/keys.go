@@ -105,6 +105,7 @@ func (kp *KeyPair) Fingerprint() string {
 // GenerateSSHKey generates SSH keypair based on path of the private key
 // The public key would be generated to the same path with ".pub" added
 func GenerateSSHKey(path string) error {
+	fmt.Printf("XXX GenerateSSHKey -> %s\n", path)
 	if _, err := os.Stat(path); err != nil {
 		if !os.IsNotExist(err) {
 			return fmt.Errorf("Desired directory for SSH keys does not exist: %s", err)
